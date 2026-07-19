@@ -1,4 +1,4 @@
-streamlit
-mediapipe
-flask
-tensorflow-cpu
+streamlit==1.35.0
+mediapipe==0.10.14
+flask==3.0.3
+tensorflow-cpu==2.15.0
