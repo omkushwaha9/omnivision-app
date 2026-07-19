@@ -1,4 +1,4 @@
 streamlit
-mediapipe==0.10.35
+mediapipe
 flask
 tensorflow-cpu
