@@ -1,8 +1,4 @@
 streamlit
 mediapipe
-numpy<2.0.0
-streamlit-webrtc
-av
-flask
 flask
 tensorflow-cpu
