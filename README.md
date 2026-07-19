@@ -54,7 +54,7 @@ Because cloud application engines execute inside headless Linux distribution con
 ## 📷 Live Application Demo
 
 Alternative text explaining image constraints or visual proof of real-time image processing mapping targets to exact accuracy boundaries.
-![OmniVision Live Demo](assets/screenshot1.png)
+![OmniVision Live Demo](assets/Screenshot1.png)
 
 ---
 
