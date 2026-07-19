@@ -1,6 +1,6 @@
 # 📸 OmniVision Deep Learning Hub
 
-[![Streamlit App](https://static.streamlit.io/badge_svg.svg)](https://omnivision-app.streamlit.app/)
+[![Streamlit App](https://img.shields.io/badge/Streamlit-App-FF4B4B?logo=streamlit)](https://omnivision-app.streamlit.app/) 
 [![GitHub Repo](https://img.shields.io/badge/GitHub-Repository-blue?logo=github)](https://github.com/omkushwaha9/omnivision-app)
 [![Python Version](https://img.shields.io/badge/Python-3.11%20%7C%203.12-green?logo=python)](https://www.python.org/)
 [![Framework](https://img.shields.io/badge/Framework-Streamlit-FF4B4B?logo=streamlit)](https://streamlit.io/)
