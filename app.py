@@ -7,6 +7,7 @@ import os
 import base64
 import io
 import streamlit as st
+import tensorflow as tf
 import numpy as np
 from flask import Flask, jsonify, render_template, request
 from PIL import Image
@@ -108,6 +109,14 @@ def find_free_port(preferred: int = 8080, attempts: int = 10) -> int:
                 continue
     raise RuntimeError(f"No free port found starting at {preferred}")
 
+@st.cache_resource
+def get_model():
+    st.write("Loading MobileNetV2 architecture...")
+    return tf.keras.applications.MobileNetV2(weights='imagenet')
 
-st.title("OmniVision App Live!")
-st.write("If you see this, the interface is working perfectly.")
+# 2. Initialize it cleanly without blocking the thread
+model = get_model()
+
+# 3. Explicitly give Streamlit something to draw on screen
+st.title("📸 OmniVision Deep Learning Hub")
+st.success("MobileNetV2 Engine is online and ready!")
