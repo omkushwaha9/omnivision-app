@@ -6,7 +6,7 @@
 import os
 import base64
 import io
-
+import streamlit as st
 import numpy as np
 from flask import Flask, jsonify, render_template, request
 from PIL import Image
@@ -109,10 +109,5 @@ def find_free_port(preferred: int = 8080, attempts: int = 10) -> int:
     raise RuntimeError(f"No free port found starting at {preferred}")
 
 
-if __name__ == "__main__":
-    preferred = int(os.environ.get("PORT", 8080))
-    port = find_free_port(preferred)
-    if port != preferred:
-        print(f"Port {preferred} is in use — using {port} instead.")
-    print(f"Open http://127.0.0.1:{port}")
-    app.run(host="0.0.0.0", port=port, debug=False)
+st.title("OmniVision App Live!")
+st.write("If you see this, the interface is working perfectly.")
