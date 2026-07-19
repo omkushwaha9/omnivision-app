@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="auto">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OmniVision — Live Object Classifier</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --accent: #10b981;
+    --accent-soft: rgba(16, 185, 129, 0.15);
+    --accent-glow: rgba(16, 185, 129, 0.35);
+    --danger: #ef4444;
+    --danger-hover: #dc2626;
+    --radius: 14px;
+    --radius-sm: 8px;
+    --font: 'Inter', system-ui, -apple-system, sans-serif;
+    --shadow: 0 18px 50px rgba(0, 0, 0, 0.18);
+    --transition: 0.2s ease;
+  }
+
+  :root[data-theme="dark"],
+  :root:not([data-theme]) {
+    --bg: #070b12;
+    --bg-elevated: #0d1320;
+    --surface: #111827;
+    --surface-2: #1a2332;
+    --border: #243044;
+    --text: #f1f5f9;
+    --text-muted: #94a3b8;
+    --text-subtle: #64748b;
+    --overlay-top: linear-gradient(rgba(7, 11, 18, 0.92), rgba(7, 11, 18, 0.45), transparent);
+    --scan-color: #10b981;
+  }
+
+  :root[data-theme="light"] {
+    --bg: #f4f7fb;
+    --bg-elevated: #ffffff;
+    --surface: #ffffff;
+    --surface-2: #eef2f7;
+    --border: #dbe3ee;
+    --text: #0f172a;
+    --text-muted: #475569;
+    --text-subtle: #64748b;
+    --overlay-top: linear-gradient(rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.55), transparent);
+    --scan-color: #059669;
+    --shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root[data-theme="auto"] {
+      --bg: #f4f7fb;
+      --bg-elevated: #ffffff;
+      --surface: #ffffff;
+      --surface-2: #eef2f7;
+      --border: #dbe3ee;
+      --text: #0f172a;
+      --text-muted: #475569;
+      --text-subtle: #64748b;
+      --overlay-top: linear-gradient(rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.55), transparent);
+      --scan-color: #059669;
+      --shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
+    }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root[data-theme="auto"] {
+      --bg: #070b12;
+      --bg-elevated: #0d1320;
+      --surface: #111827;
+      --surface-2: #1a2332;
+      --border: #243044;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-subtle: #64748b;
+      --overlay-top: linear-gradient(rgba(7, 11, 18, 0.92), rgba(7, 11, 18, 0.45), transparent);
+      --scan-color: #10b981;
+    }
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    min-height: 100vh;
+    transition: background var(--transition), color var(--transition);
+  }
+
+  .page {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 24px 16px 40px;
+  }
+
+  /* ── Header ── */
+  .header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .brand h1 {
+    font-size: 1.65rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: var(--text);
+  }
+
+  .brand h1 span { color: var(--accent); }
+
+  .brand p {
+    margin-top: 4px;
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+
+  .theme-switch {
+    display: flex;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 3px;
+    flex-shrink: 0;
+  }
+
+  .theme-btn {
+    border: none;
+    background: transparent;
+    color: var(--text-subtle);
+    font-family: var(--font);
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 7px 12px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background var(--transition), color var(--transition);
+  }
+
+  .theme-btn.active {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  /* ── Camera ── */
+  .camera-wrap {
+    position: relative;
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    background: var(--bg-elevated);
+    box-shadow: var(--shadow);
+    aspect-ratio: 4 / 3;
+  }
+
+  video {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  canvas { display: none; }
+
+  .hud {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 18px 20px 28px;
+    background: var(--overlay-top);
+    pointer-events: none;
+  }
+
+  .hud-label {
+    font-size: 1.65rem;
+    font-weight: 800;
+    color: var(--accent);
+    text-shadow: 0 0 24px var(--accent-glow);
+    line-height: 1.2;
+    min-height: 2rem;
+  }
+
+  .hud-conf {
+    margin-top: 4px;
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  .hud-model {
+    margin-top: 8px;
+    display: inline-block;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-subtle);
+    background: var(--accent-soft);
+    border: 1px solid transparent;
+    border-radius: 999px;
+    padding: 4px 10px;
+  }
+
+  .fps-badge {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    background: rgba(0, 0, 0, 0.55);
+    color: #e2e8f0;
+    border-radius: var(--radius-sm);
+    padding: 4px 10px;
+    font-size: 0.6875rem;
+    font-family: ui-monospace, monospace;
+    backdrop-filter: blur(8px);
+  }
+
+  :root[data-theme="light"] .fps-badge,
+  :root[data-theme="auto"] .fps-badge {
+    background: rgba(255, 255, 255, 0.82);
+    color: var(--text-muted);
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root[data-theme="auto"] .fps-badge {
+      background: rgba(255, 255, 255, 0.82);
+      color: var(--text-muted);
+    }
+  }
+
+  .scan-line {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--scan-color), transparent);
+    animation: scan 2.5s linear infinite;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .scanning .scan-line { opacity: 0.85; }
+
+  @keyframes scan {
+    0%   { top: 0; }
+    100% { top: 100%; }
+  }
+
+  .offline {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    color: var(--text-subtle);
+    background: var(--bg-elevated);
+  }
+
+  .offline-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--surface-2);
+    display: grid;
+    place-items: center;
+    font-size: 1.5rem;
+  }
+
+  /* ── Predictions ── */
+  .predictions {
+    margin-top: 16px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    transition: border-color var(--transition), transform var(--transition);
+  }
+
+  .card.first {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+
+  .card-rank {
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-subtle);
+  }
+
+  .card-name {
+    margin-top: 6px;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.3;
+  }
+
+  .card-pct {
+    margin-top: 2px;
+    font-size: 0.8125rem;
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .bar-wrap {
+    margin-top: 10px;
+    background: var(--surface-2);
+    border-radius: 999px;
+    height: 4px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 999px;
+    transition: width 0.3s ease;
+  }
+
+  /* ── Controls ── */
+  .controls {
+    margin-top: 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 11px 22px;
+    font-family: var(--font);
+    font-size: 0.875rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.12s ease, background var(--transition);
+  }
+
+  .btn:active { transform: scale(0.98); }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .btn-primary:hover { filter: brightness(1.06); }
+
+  .btn-danger {
+    background: var(--danger);
+    color: #fff;
+  }
+
+  .btn-danger:hover { background: var(--danger-hover); }
+
+  .status {
+    font-size: 0.8125rem;
+    color: var(--text-subtle);
+  }
+
+  .footer-note {
+    margin-top: 28px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+    line-height: 1.55;
+  }
+
+  .footer-note strong { color: var(--text); }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <header class="header">
+    <div class="brand">
+      <h1><span>Omni</span>Vision</h1>
+      <p>Point your camera at any object — AI identifies it in real time and shows the result above the feed.</p>
+    </div>
+    <div class="theme-switch" role="group" aria-label="Theme">
+      <button class="theme-btn" data-theme="dark">Dark</button>
+      <button class="theme-btn" data-theme="light">Light</button>
+      <button class="theme-btn active" data-theme="auto">Auto</button>
+    </div>
+  </header>
+
+  <div class="camera-wrap" id="camWrap">
+    <div class="scan-line"></div>
+    <video id="video" autoplay muted playsinline></video>
+    <canvas id="canvas"></canvas>
+
+    <div class="offline" id="offline">
+      <div class="offline-icon">📷</div>
+      <p>Start the camera to begin identifying objects</p>
+    </div>
+
+    <div class="hud" id="hud" hidden>
+      <div class="hud-label" id="label">Analyzing…</div>
+      <div class="hud-conf" id="conf">Hold an object in frame</div>
+      <span class="hud-model">ImageNet · 1000 classes</span>
+    </div>
+
+    <div class="fps-badge" id="fpsBadge" hidden>— FPS</div>
+  </div>
+
+  <div class="predictions" id="predictions"></div>
+
+  <div class="controls">
+    <button class="btn btn-primary" id="startBtn">Start Camera</button>
+    <span class="status" id="status">Camera offline</span>
+  </div>
+
+  <div class="footer-note">
+    <strong>How it works:</strong> Each frame is sent to a MobileNetV2 neural network trained on ImageNet,
+    which recognizes 1000 everyday objects — phones, cups, laptops, animals, vehicles, food, and more.
+    For best results, center the object in frame with good lighting.
+  </div>
+</div>
+
+<script>
+  const video       = document.getElementById('video');
+  const canvas      = document.getElementById('canvas');
+  const ctx         = canvas.getContext('2d');
+  const labelEl     = document.getElementById('label');
+  const confEl      = document.getElementById('conf');
+  const predictions = document.getElementById('predictions');
+  const statusEl    = document.getElementById('status');
+  const fpsBadge    = document.getElementById('fpsBadge');
+  const startBtn    = document.getElementById('startBtn');
+  const hud         = document.getElementById('hud');
+  const offline     = document.getElementById('offline');
+  const camWrap     = document.getElementById('camWrap');
+  const themeBtns   = document.querySelectorAll('.theme-btn');
+
+  let running    = false;
+  let intervalId = null;
+  let lastTime   = performance.now();
+  let busy       = false;
+
+  // ── Theme ───────────────────────────────────────────────────────
+  function setTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('omnivision-theme', theme);
+    themeBtns.forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.theme === theme);
+    });
+  }
+
+  const savedTheme = localStorage.getItem('omnivision-theme') || 'auto';
+  setTheme(savedTheme);
+
+  themeBtns.forEach(btn => {
+    btn.addEventListener('click', () => setTheme(btn.dataset.theme));
+  });
+
+  // ── Camera ────────────────────────────────────────────────────
+  startBtn.addEventListener('click', async () => {
+    if (running) {
+      stopCamera();
+      return;
+    }
+
+    try {
+      statusEl.textContent = 'Requesting camera permission…';
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: false
+      });
+
+      video.srcObject = stream;
+      await video.play();
+
+      canvas.width  = video.videoWidth  || 640;
+      canvas.height = video.videoHeight || 480;
+
+      offline.hidden = true;
+      hud.hidden     = false;
+      fpsBadge.hidden = false;
+      camWrap.classList.add('scanning');
+
+      running = true;
+      startBtn.textContent = 'Stop Camera';
+      startBtn.classList.replace('btn-primary', 'btn-danger');
+      statusEl.textContent = 'Live — identifying objects';
+
+      intervalId = setInterval(classifyFrame, 350);
+    } catch (err) {
+      statusEl.textContent = `Camera error: ${err.message}`;
+    }
+  });
+
+  function stopCamera() {
+    running = false;
+    clearInterval(intervalId);
+    video.srcObject?.getTracks().forEach(t => t.stop());
+    video.srcObject = null;
+
+    offline.hidden = false;
+    hud.hidden     = true;
+    fpsBadge.hidden = true;
+    camWrap.classList.remove('scanning');
+
+    startBtn.textContent = 'Start Camera';
+    startBtn.classList.replace('btn-danger', 'btn-primary');
+    statusEl.textContent = 'Camera stopped';
+    predictions.innerHTML = '';
+  }
+
+  // ── Classification ────────────────────────────────────────────
+  async function classifyFrame() {
+    if (!running || video.readyState < 2 || busy) return;
+    busy = true;
+
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const b64 = canvas.toDataURL('image/jpeg', 0.82);
+
+    try {
+      const res  = await fetch('/predict', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: b64 })
+      });
+      const data = await res.json();
+
+      if (data.error) {
+        statusEl.textContent = `Error: ${data.error}`;
+        busy = false;
+        return;
+      }
+
+      labelEl.textContent = data.prediction;
+      confEl.textContent  = `${data.confidence}% confidence`;
+
+      const items = data.top5 || data.top3 || [];
+      predictions.innerHTML = '';
+      items.forEach((item, i) => {
+        const card = document.createElement('div');
+        card.className = `card${i === 0 ? ' first' : ''}`;
+        card.innerHTML = `
+          <div class="card-rank">${i === 0 ? 'Best match' : `Rank ${i + 1}`}</div>
+          <div class="card-name">${item.class}</div>
+          <div class="card-pct">${item.confidence}%</div>
+          <div class="bar-wrap">
+            <div class="bar-fill" style="width:${Math.min(item.confidence, 100)}%"></div>
+          </div>`;
+        predictions.appendChild(card);
+      });
+
+      const now = performance.now();
+      const fps = (1000 / (now - lastTime)).toFixed(1);
+      lastTime = now;
+      fpsBadge.textContent = `${fps} FPS`;
+      statusEl.textContent = 'Live — identifying objects';
+
+    } catch (e) {
+      statusEl.textContent = `Request failed: ${e.message}`;
+    }
+
+    busy = false;
+  }
+</script>
+</body>
+</html>
